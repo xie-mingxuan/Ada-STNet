@@ -10,14 +10,15 @@ class STLayer(nn.Module):
                  n_skip: int, edge_dim: int, dropout: float):
         super(STLayer, self).__init__()
 
-        padding_2 = (0, (2 - 1) * dilation // 2)
         padding_3 = (0, (3 - 1) * dilation // 2)
         padding_5 = (0, (5 - 1) * dilation // 2)
         padding_7 = (0, (7 - 1) * dilation // 2)
 
+        self.weights = nn.Parameter(torch.randn(4))
+
         # dilated convolutions
-        self.filter_conv_2 = nn.Conv2d(n_residuals, n_dilations, kernel_size=(1, 2), dilation=dilation, padding=padding_2)
-        self.gate_conv_2 = nn.Conv2d(n_residuals, n_dilations, kernel_size=(1, 2), dilation=dilation, padding=padding_2)
+        self.filter_conv_2 = nn.Conv2d(n_residuals, n_dilations, kernel_size=(1, 2), dilation=dilation)
+        self.gate_conv_2 = nn.Conv2d(n_residuals, n_dilations, kernel_size=(1, 2), dilation=dilation)
 
         self.filter_conv_3 = nn.Conv2d(n_residuals, n_dilations, kernel_size=(1, 3), dilation=dilation, padding=padding_3)
         self.gate_conv_3 = nn.Conv2d(n_residuals, n_dilations, kernel_size=(1, 3), dilation=dilation, padding=padding_3)
@@ -29,11 +30,11 @@ class STLayer(nn.Module):
         self.gate_conv_7 = nn.Conv2d(n_residuals, n_dilations, kernel_size=(1, 7), dilation=dilation, padding=padding_7)
 
         # 1x1 convolution for residual connection
-        self.gconv = GraphConv(n_dilations * 4, n_residuals, edge_dim)
+        self.gconv = GraphConv(n_dilations, n_residuals, edge_dim)
         self.dropout = nn.Dropout(dropout, inplace=True)
 
         # 1x1 convolution for skip connection
-        self.skip_conv = nn.Conv1d(n_dilations * 4, n_skip, kernel_size=(1, 1))
+        self.skip_conv = nn.Conv1d(n_dilations, n_skip, kernel_size=(1, 1))
         self.bn = nn.BatchNorm2d(n_residuals)
 
     def forward(self, x: Tensor, skip: Tensor, supports: Tensor):
@@ -63,12 +64,12 @@ class STLayer(nn.Module):
         _gate7 = torch.sigmoid(_gate7)
         x7 = _filter7 * _gate7
 
-        x2, x3, x5, x7 = self.align_tensors_to_min_size(x2, x3, x5,x7, dim=3)
+        x2, x3, x5, x7 = self.align_tensors_to_min_size(x2, x3, x5, x7, dim=3)
 
-        x = torch.cat([x2, x3, x5, x7], dim=1)
+        x = self.weights[0] * x2 + self.weights[1] * x3 + self.weights[2] * x5 + self.weights[3] * x7
 
         # parametrized skip connection
-        s = x
+        s = x2
         s = self.skip_conv(s)
         skip = skip[:, :, :, -s.size(3):]
         skip = s + skip
