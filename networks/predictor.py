@@ -33,27 +33,27 @@ class STLayer(nn.Module):
     def forward(self, x: Tensor, skip: Tensor, supports: Tensor):
         residual = x  # [B, F, N, T]
         # dilated convolution
-        _filter2 = self.filter_conv2(residual)
+        _filter2 = self.filter_conv_2(residual)
         _filter2 = torch.tanh(_filter2)
-        _gate2 = self.gate_conv2(residual)
+        _gate2 = self.gate_conv_2(residual)
         _gate2 = torch.sigmoid(_gate2)
         x2 = _filter2 * _gate2
 
-        _filter3 = self.filter_conv3(residual)
+        _filter3 = self.filter_conv_3(residual)
         _filter3 = torch.tanh(_filter3)
-        _gate3 = self.gate_conv3(residual)
+        _gate3 = self.gate_conv_3(residual)
         _gate3 = torch.sigmoid(_gate3)
         x3 = _filter3 * _gate3
 
-        _filter5 = self.filter_conv5(residual)
+        _filter5 = self.filter_conv_5(residual)
         _filter5 = torch.tanh(_filter5)
-        _gate5 = self.gate_conv5(residual)
+        _gate5 = self.gate_conv_5(residual)
         _gate5 = torch.sigmoid(_gate5)
         x5 = _filter5 * _gate5
 
-        _filter7 = self.filter_conv7(residual)
+        _filter7 = self.filter_conv_7(residual)
         _filter7 = torch.tanh(_filter7)
-        _gate7 = self.gate_conv7(residual)
+        _gate7 = self.gate_conv_7(residual)
         _gate7 = torch.sigmoid(_gate7)
         x7 = _filter7 * _gate7
 
