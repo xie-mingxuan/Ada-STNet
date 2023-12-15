@@ -10,8 +10,17 @@ class STLayer(nn.Module):
                  n_skip: int, edge_dim: int, dropout: float):
         super(STLayer, self).__init__()
         # dilated convolutions
-        self.filter_conv = nn.Conv2d(n_residuals, n_dilations, kernel_size=(1, kernel_size), dilation=dilation)
-        self.gate_conv = nn.Conv1d(n_residuals, n_dilations, kernel_size=(1, kernel_size), dilation=dilation)
+        self.filter_conv_2 = nn.Conv2d(n_residuals, n_dilations, kernel_size=(1, 2), dilation=dilation)
+        self.gate_conv_2 = nn.Conv2d(n_residuals, n_dilations, kernel_size=(1, 2), dilation=dilation)
+
+        self.filter_conv_3 = nn.Conv2d(n_residuals, n_dilations, kernel_size=(1, 3), dilation=dilation)
+        self.gate_conv_3 = nn.Conv2d(n_residuals, n_dilations, kernel_size=(1, 3), dilation=dilation)
+
+        self.filter_conv_5 = nn.Conv2d(n_residuals, n_dilations, kernel_size=(1, 5), dilation=dilation)
+        self.gate_conv_5 = nn.Conv2d(n_residuals, n_dilations, kernel_size=(1, 5), dilation=dilation)
+
+        self.filter_conv_7 = nn.Conv2d(n_residuals, n_dilations, kernel_size=(1, 7), dilation=dilation)
+        self.gate_conv_7 = nn.Conv2d(n_residuals, n_dilations, kernel_size=(1, 7), dilation=dilation)
 
         # 1x1 convolution for residual connection
         self.gconv = GraphConv(n_dilations, n_residuals, edge_dim)
@@ -22,13 +31,13 @@ class STLayer(nn.Module):
         self.bn = nn.BatchNorm2d(n_residuals)
 
     def forward(self, x: Tensor, skip: Tensor, supports: Tensor):
-        residual = x # [B, F, N, T]
+        residual = x  # [B, F, N, T]
         # dilated convolution
         _filter = self.filter_conv(residual)
         _filter = torch.tanh(_filter)
         _gate = self.gate_conv(residual)
         _gate = torch.sigmoid(_gate)
-        x = _filter * _gate  
+        x = _filter * _gate
 
         # parametrized skip connection
         s = x
@@ -36,7 +45,7 @@ class STLayer(nn.Module):
         skip = skip[:, :, :, -s.size(3):]
         skip = s + skip
 
-        x = self.gconv(x, supports) 
+        x = self.gconv(x, supports)
         self.dropout(x)
 
         x = x + residual[:, :, :, -x.size(3):]
@@ -95,11 +104,11 @@ class Predictor(nn.Module):
         super(Predictor, self).__init__()
         # n_in = n_in + 2
         self.t_pred = n_pred
-        
+
         # the reduction in the time dimension after stackedSTBlocks 
         self.receptive_field = n_blocks * (kernel_size - 1) * (2 ** n_layers - 1) + 1
-       
-        #fully connected networks for expanding the feature dimension
+
+        # fully connected networks for expanding the feature dimension
         self.enter = nn.Conv2d(n_in, n_residuals, kernel_size=(1, 1))
 
         self.blocks = StackedSTBlocks(n_blocks, n_layers, kernel_size, n_residuals, n_dilations,
@@ -116,7 +125,7 @@ class Predictor(nn.Module):
         """
         : params inputs: tensor, [B, T, N, F]
         """
-        inputs = inputs.transpose(1, 3) 
+        inputs = inputs.transpose(1, 3)
 
         in_len = inputs.size(3)
         if in_len < self.receptive_field:
@@ -131,5 +140,3 @@ class Predictor(nn.Module):
 
         y_ = self.out(skip)
         return y_.reshape(b, self.t_pred, -1, n).transpose(-1, -2)
-
-
