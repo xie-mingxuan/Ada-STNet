@@ -46,13 +46,13 @@ def get_adjacency_matrix(distance_df, sensor_ids, normalized_k=0.1):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--sensor_ids_filename', type=str, default='data/sensor_graph/graph_sensor_ids.txt',
+    parser.add_argument('--sensor_ids_filename', type=str, default='../data/sensor_graph/graph_sensor_ids_pems.txt',
                         help='File containing sensor ids separated by comma.')
-    parser.add_argument('--distances_filename', type=str, default='data/sensor_graph/distances_la_2012.csv',
+    parser.add_argument('--distances_filename', type=str, default='../data/sensor_graph/distances_bay_2017.csv',
                         help='CSV file containing sensor distances with three columns: [from, to, distance].')
     parser.add_argument('--normalized_k', type=float, default=0.1,
                         help='Entries that become lower than normalized_k after normalization are set to zero for sparsity.')
-    parser.add_argument('--output_pkl_filename', type=str, default='data/sensor_graph/adj_mat.pkl',
+    parser.add_argument('--output_pkl_filename', type=str, default='../data/sensor_graph/adj_mx.pkl',
                         help='Path of the output file.')
     args = parser.parse_args()
 

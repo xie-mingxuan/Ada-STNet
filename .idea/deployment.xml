@@ -3,10 +3,17 @@
   <component name="PublishConfigData" serverName="实验室GPU服务器2080ti" remoteFilesAllowedToDisappearOnAutoupload="false" confirmBeforeUploading="false">
     <option name="confirmBeforeUploading" value="false" />
     <serverData>
+      <paths name="xmx@118.195.135.142:50099 password">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
       <paths name="实验室GPU服务器2080ti">
         <serverdata>
           <mappings>
-            <mapping deploy="/Ada-STNet/" local="$PROJECT_DIR$" web="/" />
+            <mapping local="$PROJECT_DIR$" web="/" />
           </mappings>
         </serverdata>
       </paths>
