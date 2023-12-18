@@ -38,6 +38,7 @@ class GraphLearner(nn.Module):
         self.adaptive = nn.Parameter(supports, requires_grad=learn_macro)
 
         if learn_micro:
+            self.weights = nn.Parameter(torch.randn(2))
             self.mi_learner = MiLearner(n_hist, n_in, node_dim, dropout)
 
     def forward(self, inputs: Tensor = None) -> Tensor:
@@ -49,7 +50,7 @@ class GraphLearner(nn.Module):
 
         if hasattr(self, 'mi_learner'):
             #Multi-level Graph Structure Fusion
-            supports = supports.unsqueeze(1) + self.mi_learner(inputs)
+            supports = self.weights[0] * supports.unsqueeze(1) + self.weights[1] * self.mi_learner(inputs)
     
         return  F.normalize(torch.relu(supports), p=1, dim=-1)
 

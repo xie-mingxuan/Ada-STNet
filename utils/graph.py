@@ -1,6 +1,6 @@
 import os
 from typing import List, Optional
-
+import torch.nn.functional as F
 import numpy as np
 import scipy.sparse as sp
 import torch
@@ -117,6 +117,10 @@ class GraphConv(nn.Module):
         self.c_in, self.c_out, self.edge_dim = c_in, c_out, edge_dim
         self.out = nn.Conv2d(c_in * (edge_dim + 1), c_out, kernel_size=(1, 1))
 
+        # 定义注意力机制的参数
+        self.attention_weight = nn.Parameter(torch.Tensor(c_in, c_in))
+        nn.init.xavier_uniform_(self.attention_weight.data, gain=1.414)
+
     def forward(self, x: Tensor, supports: Tensor):
         """
         :param x: tensor, [B, c_in, N, T] or [B, c_in, N]
@@ -127,20 +131,28 @@ class GraphConv(nn.Module):
         if flag:
             x.unsqueeze_(-1)
 
-        h = [x] + [self.nconv(x, a) for a in supports]   #formula (21) in the paper 
+        h = [x] + [self.nconv(x, a, self.attention_weight) for a in supports]   #formula (21) in the paper
         h = torch.cat(h, 1) #[B, cin*(edge_dim+1), N, T] or [B, c_in*(edge_dim+1), N]
         return self.out(h).squeeze(-1) if flag else self.out(h)
 
     @staticmethod
-    def nconv(x: Tensor, a: Tensor):
+    def nconv(x: Tensor, a: Tensor, attention_weight: Tensor):
         """
         :param x: tensor, [B, C, N, T]
         :param a: tensor, [B, N, N] or [N, N]
         :return:
         """
-        a_ = 'vw' if len(a.shape) == 2 else 'bvw'
-        x = torch.einsum(f'bcvt,{a_}->bcwt', [x, a])  # x_bcwt = sum_v(x_bcvt * a_bvw)
-        return x.contiguous()
+        # a_ = 'vw' if len(a.shape) == 2 else 'bvw'
+        # x = torch.einsum(f'bcvt,{a_}->bcwt', [x, a])  # x_bcwt = sum_v(x_bcvt * a_bvw)
+        # return x.contiguous()
+
+        # 计算注意力分数
+        attention_score = torch.einsum('bcnt,cd->bndt', [x, attention_weight])
+        attention_score = F.softmax(attention_score, dim=2)  # 沿着邻居节点维度进行softmax
+
+        # 应用注意力机制
+        x = torch.einsum('bndt,bcnt->bcnt', [attention_score, x])
+        return x
 
     def __repr__(self):
         return f'GraphConv({self.c_in}, {self.c_out}, edge_dim={self.edge_dim}, attn={hasattr(self, "attn")})'

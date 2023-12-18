@@ -13,7 +13,7 @@
       <paths name="实验室GPU服务器2080ti">
         <serverdata>
           <mappings>
-            <mapping local="$PROJECT_DIR$" web="/" />
+            <mapping deploy="/Ada-STNet/" local="$PROJECT_DIR$" web="/" />
           </mappings>
         </serverdata>
       </paths>
